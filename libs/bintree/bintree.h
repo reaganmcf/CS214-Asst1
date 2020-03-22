@@ -6,7 +6,7 @@ Header file for Bintree
 #ifndef BINTREE_H
 #define BINTREE_H
 
-//HeapNode Struct Definition
+//BinTreeNode Struct Definition
 typedef struct BinTreeNode
 {
   char *data;
@@ -14,11 +14,17 @@ typedef struct BinTreeNode
   struct BinTreeNode *right;
 } BinTreeNode;
 
-//Heap Struct Definition
-typedef struct BinTree
-{
-  int size;
-  BinTreeNode *head;
-} BinTree;
+
+//Function Prototype for creating new BinTreeNode
+BinTreeNode* createBinTreeNode(char* data, BinTreeNode* left, BinTreeNode* right);
+
+//Function Prototype for printing BinTree using preorder syntax
+void preorderPrintBinTree(BinTreeNode* head);
+
+//Function Prototype for printing BinTree using inorder syntax
+void inorderPrintBinTree(BinTreeNode* head);
+
+//Function Prototype for printing BinTree using postorder syntax
+void postorderPrintBinTree(BinTreeNode* head);
 
 #endif
