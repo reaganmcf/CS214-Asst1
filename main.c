@@ -76,10 +76,13 @@ MinHeap* insertIntoHeap(char* file, MinHeap* minHeap) {
   while (1) {
     num_bytes = read(fd, &currChar, 1);
     if (isDelim(currChar) || num_bytes == 0) {
+      char *tempCurrToken = malloc((currTokenSize) * sizeof(char));
+      strncpy(tempCurrToken, currToken, currTokenSize);
+      printf("%s\n", tempCurrToken);
       // check if token already exists
-      HeapNode* temp1 = minHeap_search(minHeap, currToken);
+      HeapNode* temp1 = minHeap_search(minHeap, tempCurrToken);
       if (temp1 == NULL) {
-        temp1 = createHeapNode(currToken, 1);
+        temp1 = createHeapNode(tempCurrToken, 1);
         minHeap_insert(minHeap, temp1);
       } else {
         temp1 -> freq++;
@@ -94,6 +97,7 @@ MinHeap* insertIntoHeap(char* file, MinHeap* minHeap) {
       }
       
       // insert the delim into the minheap
+      
       HeapNode* temp2 = minHeap_search(minHeap, &currChar);
       if (temp2 == NULL) {
         temp2 = createHeapNode(&currChar, 1);
@@ -114,7 +118,14 @@ MinHeap* insertIntoHeap(char* file, MinHeap* minHeap) {
 
 // checks if the current character is a delimiter
 int isDelim(char curr) {
-  if (curr == ' ' || curr == '\n' || curr == '\t') {
+  if(curr == '\n') {
+    printf("this is a new line\n");
+  }
+  if(isblank(curr)) {
+    printf("this is a blank\n");
+  }
+
+  if (isblank(curr) || curr == '\n') {
     return 1;
   } else {
     return 0;
