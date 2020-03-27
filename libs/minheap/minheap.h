@@ -37,6 +37,9 @@ void minHeap_insert(MinHeap* minHeap, HeapNode* heapNode);
 //Function Prototype for deleting the min HeapNode in a MinHeap
 HeapNode* minHeap_delete(MinHeap* minHeap);
 
+//Function Prototype for searching for a node in a Minheap
+HeapNode* minHeap_search(MinHeap* minHeap, char* data);
+
 //Function Prototype for heapify a MinHeap
 void minHeap_heapify(MinHeap* minHeap, int idx);
 

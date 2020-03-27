@@ -24,10 +24,13 @@ int main(int argc, char** argv) {
   minHeap_insert(minHeap, n6);
   printMinHeap(minHeap);
 
-  HeapNode* t = minHeap_delete(minHeap);
+  HeapNode* t = minHeap_delete(minHeap);  
   printMinHeap(minHeap);
 
   printf("node deleted = {'%s', %d}\n", t->data, t->freq);
+
+  t = minHeap_search(minHeap, "f");
+  printf("node searched = {'%s', %d}\n", t->data, t->freq);
 
   printf("success\n");
   return 1;

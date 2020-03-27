@@ -1,5 +1,6 @@
 #include<stdlib.h>
 #include<stdio.h>
+#include<string.h>
 #include "minheap.h"
 
 /**
@@ -43,6 +44,20 @@ void minHeap_insert(MinHeap* minHeap, HeapNode* heapNode) {
   }
   
   minHeap->elements[i] = heapNode;
+}
+
+/**
+ * Search for a HeapNode if it exists. If it does not, then return NULL
+ */
+HeapNode* minHeap_search(MinHeap* minHeap, char* data) {
+  int i = 0;
+  for(i = 0; i < minHeap->size; i++) {
+    if(strcmp(minHeap->elements[i]->data, data) == 0) {
+      return minHeap->elements[i];
+    }
+  }
+
+  return NULL;
 }
 
 void minHeap_swap(HeapNode** heapNode1, HeapNode** heapNode2) {
