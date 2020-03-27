@@ -1,12 +1,34 @@
 #include<stdio.h>
 #include<stdlib.h>
+#include<string.h>
+#include <fcntl.h>
+#include <unistd.h>
 
 //import custom libs and supporting files
 #include "libs/bintree/bintree.h"
 #include "libs/minheap/minheap.h"
 
-int main(int argc, char** argv) {
+MinHeap* insertIntoHeap(char* file, MinHeap* minHeap);
+int isDelim(char curr);
 
+int main(int argc, char** argv) {
+  char flag1 = argv[1][1];
+
+  // checks that first flag is valid
+  if (flag1 != 'b' && flag1 != 'c' && flag1 != 'd' && flag1 != 'R') {
+    printf("FATAL ERROR: please pass in either -b, -c, -d, or -R as a flag\n");
+    exit(0);
+  }
+  
+  MinHeap* minHeap = createMinHeap();
+  if (flag1 != 'R') {
+    minHeap = insertIntoHeap(argv[2], minHeap);
+    printMinHeap(minHeap);
+  }
+
+  return 1;
+
+  /*
   MinHeap* minHeap = createMinHeap();
   HeapNode* n1 = createHeapNode("a", 100);
   HeapNode* n2 = createHeapNode("b", 50);
@@ -34,4 +56,67 @@ int main(int argc, char** argv) {
 
   printf("success\n");
   return 1;
+  */
+}
+
+MinHeap* insertIntoHeap(char* file, MinHeap* minHeap) {
+  int fd = open(file, O_RDONLY);
+
+  if (fd == -1) {
+    printf("FATAL ERROR: the file that was passed in does not exist\n");
+    exit(0);
+  }
+
+  char currChar;
+  int num_bytes = 0;
+
+  char *currToken = malloc(1000 * sizeof(char));
+  int currTokenSize = 0;
+
+  while (1) {
+    num_bytes = read(fd, &currChar, 1);
+    if (isDelim(currChar) || num_bytes == 0) {
+      // check if token already exists
+      HeapNode* temp1 = minHeap_search(minHeap, currToken);
+      if (temp1 == NULL) {
+        temp1 = createHeapNode(currToken, 1);
+        minHeap_insert(minHeap, temp1);
+      } else {
+        temp1 -> freq++;
+      }
+
+      if (num_bytes == 0) {
+        break;
+      } else {
+        free(currToken);
+        char *currToken = malloc(1000 * sizeof(char));
+        currTokenSize = 0;
+      }
+      
+      // insert the delim into the minheap
+      HeapNode* temp2 = minHeap_search(minHeap, &currChar);
+      if (temp2 == NULL) {
+        temp2 = createHeapNode(&currChar, 1);
+        minHeap_insert(minHeap, temp2);
+      } else {
+        temp2 -> freq++;
+      }
+    } else {
+      if (!isDelim(currChar)) {
+        currToken[currTokenSize] = currChar;
+        currTokenSize++;
+      }
+    }
+  }
+
+  return minHeap;
+}
+
+// checks if the current character is a delimiter
+int isDelim(char curr) {
+  if (curr == ' ' || curr == '\n' || curr == '\t') {
+    return 1;
+  } else {
+    return 0;
+  }
 }
