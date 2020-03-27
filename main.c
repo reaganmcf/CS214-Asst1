@@ -94,6 +94,10 @@ MinHeap* insertIntoHeap(char* file, MinHeap* minHeap) {
         } else {
           temp2 -> freq++;
         }
+
+        if (num_bytes == 0) {
+          break;
+        }
       } else {
         char *tempCurrToken = malloc((currTokenSize) * sizeof(char));
         strncpy(tempCurrToken, currToken, currTokenSize);
@@ -145,7 +149,7 @@ MinHeap* insertIntoHeap(char* file, MinHeap* minHeap) {
 
 // checks if the current character is a delimiter
 int isDelim(char curr) {
-  if (isblank(curr) || curr == '\n') {
+  if (curr == ' ' || curr == '\t' || curr == '\n') {
     return 1;
   } else {
     return 0;
