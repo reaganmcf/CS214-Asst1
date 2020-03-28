@@ -105,7 +105,7 @@ void printMinHeap(MinHeap* minHeap) {
   if(minHeap == NULL) return;
   int i;
   for(i = 0; i < minHeap->size; i++) {
-    printf("{'%s', %d} ", minHeap->elements[i]->data, minHeap->elements[i]->freq);
+    printf("{'%s', %d}\n", minHeap->elements[i]->data, minHeap->elements[i]->freq);
   }
 
   printf("\n");

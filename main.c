@@ -3,13 +3,18 @@
 #include<string.h>
 #include <fcntl.h>
 #include <unistd.h>
+#include <dirent.h>
+#include <sys/types.h>
+#include <sys/stat.h>
 
 //import custom libs and supporting files
 #include "libs/bintree/bintree.h"
 #include "libs/minheap/minheap.h"
 
+MinHeap* recursiveTokenization(char* path, MinHeap* minHeap);
 MinHeap* insertIntoHeap(char* file, MinHeap* minHeap);
 int isDelim(char curr);
+int isDirectory(const char *path);
 
 int main(int argc, char** argv) {
   char flag1 = argv[1][1];
@@ -23,6 +28,9 @@ int main(int argc, char** argv) {
   MinHeap* minHeap = createMinHeap();
   if (flag1 != 'R') {
     minHeap = insertIntoHeap(argv[2], minHeap);
+    printMinHeap(minHeap);
+  } else {
+    minHeap = recursiveTokenization(argv[3], minHeap);
     printMinHeap(minHeap);
   }
 
@@ -59,18 +67,41 @@ int main(int argc, char** argv) {
   */
 }
 
+MinHeap* recursiveTokenization(char* path, MinHeap* minHeap) {
+  char nextPath[1000];
+  DIR* directory;
+  struct dirent* entry;
+
+  if ((directory = opendir(path)) != NULL) {
+    while ((entry = readdir(directory)) != NULL) {
+      if ((strcmp(entry -> d_name, ".") != 0) && (strcmp(entry -> d_name, "..") != 0)) {
+        strcpy(nextPath, path);
+        strcat(nextPath, "/");
+        strcat(nextPath, entry -> d_name);
+        if (!isDirectory(nextPath)) {
+          minHeap = insertIntoHeap(nextPath, minHeap);
+        }
+        recursiveTokenization(nextPath, minHeap);
+      }
+    }
+
+    closedir(directory);
+  }
+
+  return minHeap;
+}
+
 MinHeap* insertIntoHeap(char* file, MinHeap* minHeap) {
   int fd = open(file, O_RDONLY);
-
+  
   if (fd == -1) {
-    printf("FATAL ERROR: the file that was passed in does not exist\n");
-    exit(0);
+    return minHeap;
   }
 
   char currChar;
   int num_bytes = 0;
 
-  char *currToken = malloc(1000 * sizeof(char));
+  char *currToken = malloc(2000 * sizeof(char));
   int currTokenSize = 0;
 
   while (1) {
@@ -100,7 +131,8 @@ MinHeap* insertIntoHeap(char* file, MinHeap* minHeap) {
         }
       } else {
         char *tempCurrToken = malloc((currTokenSize) * sizeof(char));
-        strncpy(tempCurrToken, currToken, currTokenSize);
+        strncpy(tempCurrToken, currToken, currTokenSize + 1);
+
         // check if token already exists
         HeapNode* temp1 = minHeap_search(minHeap, tempCurrToken);
         if (temp1 == NULL) {
@@ -113,11 +145,10 @@ MinHeap* insertIntoHeap(char* file, MinHeap* minHeap) {
         if (num_bytes == 0) {
           break;
         } else {
-          free(currToken);
-          char *currToken = malloc(1000 * sizeof(char));
+          memset(currToken, 0, strlen(currToken));
           currTokenSize = 0;
         }
-        
+
         // insert the delim into the minheap
         char* tempString = malloc(4 * sizeof(char));
         if (currChar == '\t') {
@@ -144,6 +175,8 @@ MinHeap* insertIntoHeap(char* file, MinHeap* minHeap) {
     }
   }
 
+  close(fd);
+
   return minHeap;
 }
 
@@ -154,4 +187,11 @@ int isDelim(char curr) {
   } else {
     return 0;
   }
+}
+
+int isDirectory(const char *path) {
+   struct stat statbuf;
+   if (stat(path, &statbuf) != 0)
+       return 0;
+   return S_ISDIR(statbuf.st_mode);
 }
