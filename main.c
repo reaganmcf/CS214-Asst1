@@ -80,7 +80,7 @@ MinHeap* insertIntoHeap(char* file, MinHeap* minHeap) {
         if (num_bytes == 0) {
           break;
         }
-        
+
         // insert the delim into the minheap
         char* tempString = malloc(4 * sizeof(char));
         if (currChar == '\t') {
@@ -98,8 +98,6 @@ MinHeap* insertIntoHeap(char* file, MinHeap* minHeap) {
         } else {
           temp2 -> freq++;
         }
-
-        
       } else {
         char *tempCurrToken = malloc((currTokenSize) * sizeof(char));
         strncpy(tempCurrToken, currToken, currTokenSize);
