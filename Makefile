@@ -7,7 +7,7 @@ bintree:
 	gcc -c libs/bintree/bintree.c -o libs/bintree/bintree.o
 
 compile: minheap bintree
-	gcc -Wall libs/bintree/bintree.o libs/minheap/minheap.o main.c -o fileCompressor
+	gcc libs/bintree/bintree.o libs/minheap/minheap.o main.c -o fileCompressor
 
 clean:
 	rm -rf fileCompressor; rm -rf *.hcz; rm libs/minheap/minheap.o; rm libs/bintree/bintree.o
