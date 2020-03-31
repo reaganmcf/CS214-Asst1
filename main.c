@@ -14,7 +14,7 @@
 MinHeap* recursiveTokenization(char* path, MinHeap* minHeap);
 MinHeap* insertIntoHeap(char* file, MinHeap* minHeap);
 int isDelim(char curr);
-int isDirectory(const char *path);
+int isRegFile(const char* path);
 
 int main(int argc, char** argv) {
   char flag1 = argv[1][1];
@@ -68,7 +68,7 @@ int main(int argc, char** argv) {
 }
 
 MinHeap* recursiveTokenization(char* path, MinHeap* minHeap) {
-  char nextPath[1000];
+  char nextPath[2000];
   DIR* directory;
   struct dirent* entry;
 
@@ -78,9 +78,11 @@ MinHeap* recursiveTokenization(char* path, MinHeap* minHeap) {
         strcpy(nextPath, path);
         strcat(nextPath, "/");
         strcat(nextPath, entry -> d_name);
-        if (!isDirectory(nextPath)) {
+
+        if (isRegFile(nextPath)) {
           minHeap = insertIntoHeap(nextPath, minHeap);
         }
+
         recursiveTokenization(nextPath, minHeap);
       }
     }
@@ -189,9 +191,12 @@ int isDelim(char curr) {
   }
 }
 
-int isDirectory(const char *path) {
-   struct stat statbuf;
-   if (stat(path, &statbuf) != 0)
-       return 0;
-   return S_ISDIR(statbuf.st_mode);
+int isRegFile(const char* path) {
+  struct stat statbuf;
+
+  if (stat(path, &statbuf) != 0) {
+    return 0;
+  }
+
+  return S_ISREG(statbuf.st_mode);
 }
