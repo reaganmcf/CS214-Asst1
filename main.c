@@ -94,6 +94,12 @@ MinHeap* recursiveTokenization(char* path, MinHeap* minHeap) {
 }
 
 MinHeap* insertIntoHeap(char* file, MinHeap* minHeap) {
+  int len = strlen(file);
+
+  if (file[len - 4] == '.' && file[len - 3] == 'h' && file[len - 2] == 'c' && file[len - 1] == 'z') {
+    return minHeap;
+  }
+
   int fd = open(file, O_RDONLY);
   
   if (fd == -1) {
