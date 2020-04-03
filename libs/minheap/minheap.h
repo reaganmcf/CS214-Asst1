@@ -6,6 +6,8 @@ Header file for Minheap
 #ifndef MINHEAP_H
 #define MINHEAP_H
 
+#include "./../bintree/bintree.h"
+
 //Define operators to make it easier to work with the heap
 #define LCHILD(x) 2 * x + 1
 #define RCHILD(x) 2 * x + 2
@@ -14,6 +16,8 @@ Header file for Minheap
 //HeapNode Struct Definition
 typedef struct HeapNode
 {
+  int isStoringChar;
+  BinTreeNode* treeNode;
   char *data;
   int freq;
 } HeapNode;
@@ -27,6 +31,9 @@ typedef struct MinHeap
 
 //Function Prototype for creating a HeapNode
 HeapNode* createHeapNode(char* data, int freq);
+
+//Function Prototype for creating a HeapNode that is referencing a treeNode
+HeapNode* createHeapNode_TreeNode(BinTreeNode* treeNode, char* data, int freq);
 
 //Function Prototype for creating a MinHeap
 MinHeap* createMinHeap();
@@ -43,8 +50,8 @@ HeapNode* minHeap_search(MinHeap* minHeap, char* data);
 //Function Prototype for heapify a MinHeap
 void minHeap_heapify(MinHeap* minHeap, int idx);
 
-//Function Prototype for swapping two HeapNode inplace
-void minHeap_swap(HeapNode** heapNode1, HeapNode** heapNode2);
+//Function Prototype for heapsort
+void minHeap_heapsort(MinHeap* minHeap, int);
 
 //Function Prototype for BFS printing (level by level)
 void printMinHeap(MinHeap* minHeap);

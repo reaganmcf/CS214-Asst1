@@ -11,3 +11,9 @@ compile: minheap bintree
 
 clean:
 	rm -rf fileCompressor; rm -rf *.hcz; rm libs/minheap/minheap.o; rm libs/bintree/bintree.o
+
+test: clean compile
+	./fileCompressor -R -b ExposEssays/ > dumpfile; diff dumpfile tests/testOutput
+
+run: compile
+	./fileCompressor -R -b testFolder/

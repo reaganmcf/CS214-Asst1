@@ -1,6 +1,6 @@
-#include<stdio.h>
-#include<stdlib.h>
-#include<string.h>
+#include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
 #include <fcntl.h>
 #include <unistd.h>
 #include <dirent.h>
@@ -11,75 +11,202 @@
 #include "libs/bintree/bintree.h"
 #include "libs/minheap/minheap.h"
 
-MinHeap* recursiveTokenization(char* path, MinHeap* minHeap);
-MinHeap* insertIntoHeap(char* file, MinHeap* minHeap);
+MinHeap *recursiveTokenization(char *path, MinHeap *minHeap);
+MinHeap *insertIntoHeap(char *file, MinHeap *minHeap);
+void *printCodes(BinTreeNode *root, int arr[], int top, int fd);
 int isDelim(char curr);
-int isRegFile(const char* path);
+int isRegFile(const char *path);
 
-int main(int argc, char** argv) {
+int main(int argc, char **argv)
+{
   char flag1 = argv[1][1];
 
   // checks that first flag is valid
-  if (flag1 != 'b' && flag1 != 'c' && flag1 != 'd' && flag1 != 'R') {
+  if (flag1 != 'b' && flag1 != 'c' && flag1 != 'd' && flag1 != 'R')
+  {
     printf("FATAL ERROR: please pass in either -b, -c, -d, or -R as a flag\n");
     exit(0);
   }
-  
-  MinHeap* minHeap = createMinHeap();
-  if (flag1 != 'R') {
+
+  MinHeap *minHeap = createMinHeap();
+  if (flag1 != 'R')
+  {
     minHeap = insertIntoHeap(argv[2], minHeap);
     printMinHeap(minHeap);
-  } else {
+  }
+  else
+  {
     minHeap = recursiveTokenization(argv[3], minHeap);
     printMinHeap(minHeap);
   }
 
+  /**
+   * Build up the Huffman Tree
+   * 
+   * First we need to start pulling off 2 elements at a time from the MinHeap and check if they are HeapNodes that reference BinTreeNodes or they are just holding char and freq
+   */
+
+  HeapNode *temp1 = NULL;
+  HeapNode *temp2 = NULL;
+
+  // printf("\n\n");
+  if (strcmp(argv[1], "-b") == 0 || strcmp(argv[2], "-b") == 0)
+  {
+    int treeCount = 0;
+    int c = 1000;
+    while (minHeap->size > 1 && c > 0)
+    {
+      printf("minHeap->size = %d\n", minHeap->size);
+      char *treeStringHolder = malloc(sizeof(char) * 80);
+      c--;        //max loops for debugging
+      sleep(0.1); //slow it down so we can see how its building
+      sprintf(treeStringHolder, "tree%d", treeCount);
+
+      minHeap_heapsort(minHeap, 0);
+      temp1 = minHeap_delete(minHeap);
+      minHeap_heapsort(minHeap, 0);
+      temp2 = minHeap_delete(minHeap);
+
+      printf("temp1 = {'%s', %d, isStoringChar = %d}\n", temp1->data, temp1->freq, temp1->isStoringChar);
+      printf("temp2 = {'%s', %d, isStoringChar = %d}\n", temp2->data, temp2->freq, temp2->isStoringChar);
+      if (temp1->isStoringChar == 1 && temp2->isStoringChar == 1)
+      {
+        //They are both holding characters, so we need to build a subtree that contains these elements
+        BinTreeNode *left = createBinTreeNode(temp1->data, temp1->freq, NULL, NULL);
+        BinTreeNode *right = createBinTreeNode(temp2->data, temp2->freq, NULL, NULL);
+        BinTreeNode *parent = createBinTreeNode(treeStringHolder, temp1->freq + temp2->freq, left, right);
+        HeapNode *newHeapNode = createHeapNode_TreeNode(parent, parent->data, calcFrequencyOfEntireTree(parent));
+
+        printf("new heap node contains {'%s', %d} and {'%s', %d} -> {'%s', total freq = %d\n", temp1->data, temp1->freq, temp2->data, temp2->freq, newHeapNode->data, newHeapNode->freq);
+        //Add heapnode back to heap
+        minHeap_insert(minHeap, newHeapNode);
+        treeCount++;
+      }
+      else if (temp1->isStoringChar == 1)
+      {
+        //temp1 is char, temp2 is tree
+        BinTreeNode *left = createBinTreeNode(temp1->data, temp1->freq, NULL, NULL);
+        BinTreeNode *parent = createBinTreeNode(treeStringHolder, temp1->freq + temp2->freq, left, temp2->treeNode);
+        HeapNode *newHeapNode = createHeapNode_TreeNode(parent, parent->data, calcFrequencyOfEntireTree(parent));
+
+        printf("new heap node contains {'%s', %d} and {'%s', %d} -> {'%s', total freq = %d\n", temp1->data, temp1->freq, temp2->data, temp2->freq, newHeapNode->data, newHeapNode->freq);
+        //Add heapnode back to heap
+        minHeap_insert(minHeap, newHeapNode);
+        treeCount++;
+      }
+      else if (temp2->isStoringChar == 1)
+      {
+        //temp1 is tree, temp2 is char
+        BinTreeNode *right = createBinTreeNode(temp2->data, temp2->freq, NULL, NULL);
+        BinTreeNode *parent = createBinTreeNode(treeStringHolder, temp1->freq + temp2->freq, temp1->treeNode, right);
+        HeapNode *newHeapNode = createHeapNode_TreeNode(parent, parent->data, calcFrequencyOfEntireTree(parent));
+
+        printf("new heap node contains {'%s', %d} and {'%s', %d} -> {'%s', total freq = %d\n", temp1->data, temp1->freq, temp2->data, temp2->freq, newHeapNode->data, newHeapNode->freq);
+        //Add heapnode back to heap
+        minHeap_insert(minHeap, newHeapNode);
+        treeCount++;
+      }
+      else
+      {
+        //temp1 is tree. temp2 is tree
+        BinTreeNode *parent = createBinTreeNode(treeStringHolder, temp1->freq + temp2->freq, temp1->treeNode, temp2->treeNode);
+        HeapNode *newHeapNode = createHeapNode_TreeNode(parent, parent->data, calcFrequencyOfEntireTree(parent));
+        printf("new heap node contains {'%s', %d} and {'%s', %d} -> {'%s', total freq = %d\n", temp1->data, temp1->freq, temp2->data, temp2->freq, newHeapNode->data, newHeapNode->freq);
+        //Add heapnode back to heap
+        minHeap_insert(minHeap, newHeapNode);
+        treeCount++;
+      }
+
+      minHeap_heapsort(minHeap, 0);
+      printMinHeap(minHeap);
+
+      printf("-----\n");
+    }
+
+    /**
+   * The minheap has now been created here, so we need to traverse the tree and write out our Huffman Coding book
+   */
+
+    BinTreeNode *root = minHeap->elements[0]->treeNode;
+    int *arr = malloc(sizeof(int) * 100);
+
+    if (access("./huffmanbook.hcz", F_OK) != -1)
+    {
+      remove("./huffmanbook.hcz");
+    }
+    int huffmanCodingBookFD = open("./huffmanbook.hcz", O_WRONLY | O_CREAT | O_APPEND, S_IRUSR | S_IWUSR);
+    printCodes(root, arr, 0, huffmanCodingBookFD);
+
+    printf("Successfully created huffman book\n");
+  }
+  else if (strcmp(argv[1], "-d") == 0 || strcmp(argv[2], "-d") == 0)
+  {
+    printf("need to decompress\n");
+    //decompress
+  }
+  else if (strcmp(argv[1], "-c") == 0 || strcmp(argv[2], "-c") == 0)
+  {
+    printf("need to compress\n");
+    //compress
+  }
+
   return 1;
-
-  /*
-  MinHeap* minHeap = createMinHeap();
-  HeapNode* n1 = createHeapNode("a", 100);
-  HeapNode* n2 = createHeapNode("b", 50);
-  HeapNode* n3 = createHeapNode("c", 75);
-  HeapNode* n4 = createHeapNode("d", 24);
-  HeapNode* n5 = createHeapNode("e", 17);
-  HeapNode* n6 = createHeapNode("f", 10321);
-
-  printMinHeap(minHeap);
-  minHeap_insert(minHeap, n1);
-  minHeap_insert(minHeap, n2);
-  minHeap_insert(minHeap, n3);
-  minHeap_insert(minHeap, n4);
-  minHeap_insert(minHeap, n5);
-  minHeap_insert(minHeap, n6);
-  printMinHeap(minHeap);
-
-  HeapNode* t = minHeap_delete(minHeap);  
-  printMinHeap(minHeap);
-
-  printf("node deleted = {'%s', %d}\n", t->data, t->freq);
-
-  t = minHeap_search(minHeap, "f");
-  printf("node searched = {'%s', %d}\n", t->data, t->freq);
-
-  printf("success\n");
-  return 1;
-  */
 }
 
-MinHeap* recursiveTokenization(char* path, MinHeap* minHeap) {
-  char nextPath[2000];
-  DIR* directory;
-  struct dirent* entry;
+void *printCodes(BinTreeNode *root, int arr[], int top, int fd)
 
-  if ((directory = opendir(path)) != NULL) {
-    while ((entry = readdir(directory)) != NULL) {
-      if ((strcmp(entry -> d_name, ".") != 0) && (strcmp(entry -> d_name, "..") != 0)) {
+{
+  // Assign 0 to left edge and recur
+  if (root->left)
+  {
+
+    arr[top] = 0;
+    printCodes(root->left, arr, top + 1, fd);
+  }
+
+  // Assign 1 to right edge and recur
+  if (root->right)
+  {
+
+    arr[top] = 1;
+    printCodes(root->right, arr, top + 1, fd);
+  }
+
+  if (root->left == NULL && root->right == NULL)
+  {
+    int i;
+    char *temp = malloc(sizeof(char) * 2);
+    for (i = 0; i < top; i++)
+    {
+      // printf("%d", arr[i]);
+      sprintf(temp, "%d", arr[i]);
+      write(fd, temp, strlen(temp));
+    }
+    write(fd, "\t", sizeof(char));
+    write(fd, root->data, strlen(root->data));
+    write(fd, "\n", sizeof(char));
+    // printf("\n");
+  }
+}
+
+MinHeap *recursiveTokenization(char *path, MinHeap *minHeap)
+{
+  char nextPath[2000];
+  DIR *directory;
+  struct dirent *entry;
+
+  if ((directory = opendir(path)) != NULL)
+  {
+    while ((entry = readdir(directory)) != NULL)
+    {
+      if ((strcmp(entry->d_name, ".") != 0) && (strcmp(entry->d_name, "..") != 0))
+      {
         strcpy(nextPath, path);
         strcat(nextPath, "/");
-        strcat(nextPath, entry -> d_name);
+        strcat(nextPath, entry->d_name);
 
-        if (isRegFile(nextPath)) {
+        if (isRegFile(nextPath))
+        {
           minHeap = insertIntoHeap(nextPath, minHeap);
         }
 
@@ -93,16 +220,19 @@ MinHeap* recursiveTokenization(char* path, MinHeap* minHeap) {
   return minHeap;
 }
 
-MinHeap* insertIntoHeap(char* file, MinHeap* minHeap) {
+MinHeap *insertIntoHeap(char *file, MinHeap *minHeap)
+{
   int len = strlen(file);
 
-  if (file[len - 4] == '.' && file[len - 3] == 'h' && file[len - 2] == 'c' && file[len - 1] == 'z') {
+  if (file[len - 4] == '.' && file[len - 3] == 'h' && file[len - 2] == 'c' && file[len - 1] == 'z')
+  {
     return minHeap;
   }
 
   int fd = open(file, O_RDONLY);
-  
-  if (fd == -1) {
+
+  if (fd == -1)
+  {
     return minHeap;
   }
 
@@ -112,71 +242,102 @@ MinHeap* insertIntoHeap(char* file, MinHeap* minHeap) {
   char *currToken = malloc(2000 * sizeof(char));
   int currTokenSize = 0;
 
-  while (1) {
+  while (1)
+  {
     num_bytes = read(fd, &currChar, 1);
-    if (isDelim(currChar) || num_bytes == 0) {
-      if (isDelim(currChar) && currTokenSize == 0) {
-        if (num_bytes == 0) {
+    if (isDelim(currChar) || num_bytes == 0)
+    {
+      if (isDelim(currChar) && currTokenSize == 0)
+      {
+        if (num_bytes == 0)
+        {
           break;
         }
 
         // insert the delim into the minheap
-        char* tempString = malloc(4 * sizeof(char));
-        if (currChar == '\t') {
+        char *tempString = malloc(4 * sizeof(char));
+        if (currChar == '\t')
+        {
           tempString = "<\\t>";
-        } else if (currChar == ' ') {
+        }
+        else if (currChar == ' ')
+        {
           tempString = "<\\s>";
-        } else if (currChar == '\n') {
+        }
+        else if (currChar == '\n')
+        {
           tempString = "<\\n>";
         }
 
-        HeapNode* temp2 = minHeap_search(minHeap, tempString);
-        if (temp2 == NULL) {
+        HeapNode *temp2 = minHeap_search(minHeap, tempString);
+        if (temp2 == NULL)
+        {
           temp2 = createHeapNode(tempString, 1);
           minHeap_insert(minHeap, temp2);
-        } else {
-          temp2 -> freq++;
         }
-      } else {
+        else
+        {
+          temp2->freq++;
+        }
+      }
+      else
+      {
         char *tempCurrToken = malloc((currTokenSize) * sizeof(char));
         strncpy(tempCurrToken, currToken, currTokenSize + 1);
 
         // check if token already exists
-        HeapNode* temp1 = minHeap_search(minHeap, tempCurrToken);
-        if (temp1 == NULL) {
+        HeapNode *temp1 = minHeap_search(minHeap, tempCurrToken);
+        if (temp1 == NULL)
+        {
           temp1 = createHeapNode(tempCurrToken, 1);
           minHeap_insert(minHeap, temp1);
-        } else {
-          temp1 -> freq++;
+        }
+        else
+        {
+          temp1->freq++;
         }
 
-        if (num_bytes == 0) {
+        if (num_bytes == 0)
+        {
           break;
-        } else {
+        }
+        else
+        {
           memset(currToken, 0, strlen(currToken));
           currTokenSize = 0;
         }
 
         // insert the delim into the minheap
-        char* tempString = malloc(4 * sizeof(char));
-        if (currChar == '\t') {
+        char *tempString = malloc(4 * sizeof(char));
+        if (currChar == '\t')
+        {
           tempString = "<\\t>";
-        } else if (currChar == ' ') {
+        }
+        else if (currChar == ' ')
+        {
           tempString = "<\\s>";
-        } else if (currChar == '\n') {
+        }
+        else if (currChar == '\n')
+        {
           tempString = "<\\n>";
         }
 
-        HeapNode* temp2 = minHeap_search(minHeap, tempString);
-        if (temp2 == NULL) {
+        HeapNode *temp2 = minHeap_search(minHeap, tempString);
+        if (temp2 == NULL)
+        {
           temp2 = createHeapNode(tempString, 1);
           minHeap_insert(minHeap, temp2);
-        } else {
-          temp2 -> freq++;
         }
-      } 
-    } else {
-      if (!isDelim(currChar)) {
+        else
+        {
+          temp2->freq++;
+        }
+      }
+    }
+    else
+    {
+      if (!isDelim(currChar))
+      {
         currToken[currTokenSize] = currChar;
         currTokenSize++;
       }
@@ -189,18 +350,24 @@ MinHeap* insertIntoHeap(char* file, MinHeap* minHeap) {
 }
 
 // checks if the current character is a delimiter
-int isDelim(char curr) {
-  if (curr == ' ' || curr == '\t' || curr == '\n') {
+int isDelim(char curr)
+{
+  if (curr == ' ' || curr == '\t' || curr == '\n')
+  {
     return 1;
-  } else {
+  }
+  else
+  {
     return 0;
   }
 }
 
-int isRegFile(const char* path) {
+int isRegFile(const char *path)
+{
   struct stat statbuf;
 
-  if (stat(path, &statbuf) != 0) {
+  if (stat(path, &statbuf) != 0)
+  {
     return 0;
   }
 
