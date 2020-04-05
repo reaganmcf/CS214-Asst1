@@ -7,15 +7,10 @@
 #include <sys/types.h>
 #include <sys/stat.h>
 
+#include "main.h"
 //import custom libs and supporting files
 #include "libs/bintree/bintree.h"
 #include "libs/minheap/minheap.h"
-
-MinHeap *recursiveTokenization(char *path, MinHeap *minHeap);
-MinHeap *insertIntoHeap(char *file, MinHeap *minHeap);
-void *printCodes(BinTreeNode *root, int arr[], int top, int fd);
-int isDelim(char curr);
-int isRegFile(const char *path);
 
 int main(int argc, char **argv)
 {
@@ -32,12 +27,12 @@ int main(int argc, char **argv)
   if (flag1 != 'R')
   {
     minHeap = insertIntoHeap(argv[2], minHeap);
-    printMinHeap(minHeap);
+    // printMinHeap(minHeap);
   }
   else
   {
     minHeap = recursiveTokenization(argv[3], minHeap);
-    printMinHeap(minHeap);
+    // printMinHeap(minHeap);
   }
 
   /**
@@ -50,13 +45,16 @@ int main(int argc, char **argv)
   HeapNode *temp2 = NULL;
 
   // printf("\n\n");
+  /**
+   * If we are building a codebook
+   */
   if (strcmp(argv[1], "-b") == 0 || strcmp(argv[2], "-b") == 0)
   {
     int treeCount = 0;
     int c = 1000;
     while (minHeap->size > 1 && c > 0)
     {
-      printf("minHeap->size = %d\n", minHeap->size);
+      // printf("minHeap->size = %d\n", minHeap->size);
       char *treeStringHolder = malloc(sizeof(char) * 80);
       c--;        //max loops for debugging
       sleep(0.1); //slow it down so we can see how its building
@@ -67,8 +65,8 @@ int main(int argc, char **argv)
       minHeap_heapsort(minHeap, 0);
       temp2 = minHeap_delete(minHeap);
 
-      printf("temp1 = {'%s', %d, isStoringChar = %d}\n", temp1->data, temp1->freq, temp1->isStoringChar);
-      printf("temp2 = {'%s', %d, isStoringChar = %d}\n", temp2->data, temp2->freq, temp2->isStoringChar);
+      // printf("temp1 = {'%s', %d, isStoringChar = %d}\n", temp1->data, temp1->freq, temp1->isStoringChar);
+      // printf("temp2 = {'%s', %d, isStoringChar = %d}\n", temp2->data, temp2->freq, temp2->isStoringChar);
       if (temp1->isStoringChar == 1 && temp2->isStoringChar == 1)
       {
         //They are both holding characters, so we need to build a subtree that contains these elements
@@ -77,7 +75,7 @@ int main(int argc, char **argv)
         BinTreeNode *parent = createBinTreeNode(treeStringHolder, temp1->freq + temp2->freq, left, right);
         HeapNode *newHeapNode = createHeapNode_TreeNode(parent, parent->data, calcFrequencyOfEntireTree(parent));
 
-        printf("new heap node contains {'%s', %d} and {'%s', %d} -> {'%s', total freq = %d\n", temp1->data, temp1->freq, temp2->data, temp2->freq, newHeapNode->data, newHeapNode->freq);
+        // printf("new heap node contains {'%s', %d} and {'%s', %d} -> {'%s', total freq = %d\n", temp1->data, temp1->freq, temp2->data, temp2->freq, newHeapNode->data, newHeapNode->freq);
         //Add heapnode back to heap
         minHeap_insert(minHeap, newHeapNode);
         treeCount++;
@@ -89,7 +87,7 @@ int main(int argc, char **argv)
         BinTreeNode *parent = createBinTreeNode(treeStringHolder, temp1->freq + temp2->freq, left, temp2->treeNode);
         HeapNode *newHeapNode = createHeapNode_TreeNode(parent, parent->data, calcFrequencyOfEntireTree(parent));
 
-        printf("new heap node contains {'%s', %d} and {'%s', %d} -> {'%s', total freq = %d\n", temp1->data, temp1->freq, temp2->data, temp2->freq, newHeapNode->data, newHeapNode->freq);
+        // printf("new heap node contains {'%s', %d} and {'%s', %d} -> {'%s', total freq = %d\n", temp1->data, temp1->freq, temp2->data, temp2->freq, newHeapNode->data, newHeapNode->freq);
         //Add heapnode back to heap
         minHeap_insert(minHeap, newHeapNode);
         treeCount++;
@@ -101,7 +99,7 @@ int main(int argc, char **argv)
         BinTreeNode *parent = createBinTreeNode(treeStringHolder, temp1->freq + temp2->freq, temp1->treeNode, right);
         HeapNode *newHeapNode = createHeapNode_TreeNode(parent, parent->data, calcFrequencyOfEntireTree(parent));
 
-        printf("new heap node contains {'%s', %d} and {'%s', %d} -> {'%s', total freq = %d\n", temp1->data, temp1->freq, temp2->data, temp2->freq, newHeapNode->data, newHeapNode->freq);
+        // printf("new heap node contains {'%s', %d} and {'%s', %d} -> {'%s', total freq = %d\n", temp1->data, temp1->freq, temp2->data, temp2->freq, newHeapNode->data, newHeapNode->freq);
         //Add heapnode back to heap
         minHeap_insert(minHeap, newHeapNode);
         treeCount++;
@@ -111,16 +109,16 @@ int main(int argc, char **argv)
         //temp1 is tree. temp2 is tree
         BinTreeNode *parent = createBinTreeNode(treeStringHolder, temp1->freq + temp2->freq, temp1->treeNode, temp2->treeNode);
         HeapNode *newHeapNode = createHeapNode_TreeNode(parent, parent->data, calcFrequencyOfEntireTree(parent));
-        printf("new heap node contains {'%s', %d} and {'%s', %d} -> {'%s', total freq = %d\n", temp1->data, temp1->freq, temp2->data, temp2->freq, newHeapNode->data, newHeapNode->freq);
+        // printf("new heap node contains {'%s', %d} and {'%s', %d} -> {'%s', total freq = %d\n", temp1->data, temp1->freq, temp2->data, temp2->freq, newHeapNode->data, newHeapNode->freq);
         //Add heapnode back to heap
         minHeap_insert(minHeap, newHeapNode);
         treeCount++;
       }
 
       minHeap_heapsort(minHeap, 0);
-      printMinHeap(minHeap);
+      // printMinHeap(minHeap);
 
-      printf("-----\n");
+      // printf("-----\n");
     }
 
     /**
@@ -130,11 +128,12 @@ int main(int argc, char **argv)
     BinTreeNode *root = minHeap->elements[0]->treeNode;
     int *arr = malloc(sizeof(int) * 100);
 
-    if (access("./huffmanbook.hcz", F_OK) != -1)
+    if (access("./HuffmanCodebook", F_OK) != -1)
     {
-      remove("./huffmanbook.hcz");
+      remove("./HuffmanCodebook");
     }
-    int huffmanCodingBookFD = open("./huffmanbook.hcz", O_WRONLY | O_CREAT | O_APPEND, S_IRUSR | S_IWUSR);
+
+    int huffmanCodingBookFD = open("HuffmanCodebook", O_WRONLY | O_CREAT | O_APPEND, S_IRUSR | S_IWUSR);
     printCodes(root, arr, 0, huffmanCodingBookFD);
 
     printf("Successfully created huffman book\n");
@@ -148,9 +147,73 @@ int main(int argc, char **argv)
   {
     printf("need to compress\n");
     //compress
+
+    if (argc >= 4)
+    {
+
+      //we need to read in the codebook and create a linked list of all of the key -> value pairs
+      int codebookFD = open(argc == 4 ? argv[3] : argv[4], O_RDONLY);
+      if (codebookFD == -1)
+      {
+        exit(1);
+      }
+
+      CodebookNode *codebookHead;
+      char buffer[1000];
+      char currChar;
+      int num_bytes = 0;
+
+      char *currToken = malloc(2000 * sizeof(char));
+      int currTokenSize = 0;
+
+      //BUILD A LINK LIST OF CODEBOOK NODES HERE
+
+      //AND STOP HERE
+
+      if (strcmp(argv[2], "-R") == 0)
+      {
+        char *path = argv[4];
+        char nextPath[2000];
+        //we need to recursively compress
+        DIR *directory;
+        struct dirent *entry;
+
+        if ((directory = opendir(path)) != NULL)
+        {
+          while ((entry = readdir(directory)) != NULL)
+          {
+            if ((strcmp(entry->d_name, ".") != 0) && (strcmp(entry->d_name, "..") != 0))
+            {
+              strcpy(nextPath, path);
+              strcat(nextPath, "/");
+              strcat(nextPath, entry->d_name);
+
+              if (isRegFile(nextPath))
+              {
+                compressFile(nextPath, codebookHead);
+              }
+
+              recursiveTokenization(nextPath, minHeap);
+            }
+          }
+
+          closedir(directory);
+        }
+      }
+    }
+    else
+    {
+      printf("[ ERROR ]: Improper inputs configuration for Compress. Please enter your command in the format of ./fileCompressor -c <path_to_file_to_compress> <path_to_codebook>");
+      return 1;
+    }
   }
 
-  return 1;
+  return 0;
+}
+
+void compressFile(char *path, CodebookNode *head)
+{
+  return;
 }
 
 void *printCodes(BinTreeNode *root, int arr[], int top, int fd)
