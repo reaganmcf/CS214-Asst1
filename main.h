@@ -8,7 +8,7 @@ typedef struct CodebookNode
 {
     char *key;
     char *value;
-    CodebookNode *next;
+    struct CodebookNode *next;
 } CodebookNode;
 
 MinHeap *recursiveTokenization(char *path, MinHeap *minHeap);
