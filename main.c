@@ -158,18 +158,57 @@ int main(int argc, char **argv)
         exit(1);
       }
 
-      CodebookNode *codebookHead;
-      char buffer[1000];
+      CodebookNode *codebookHead = malloc(sizeof(CodebookNode));
       char currChar;
       int num_bytes = 0;
 
-      char *currToken = malloc(2000 * sizeof(char));
+      char *currToken = malloc(1000 * sizeof(char));
       int currTokenSize = 0;
 
-      //BUILD A LINK LIST OF CODEBOOK NODES HERE
+      int key = 1;
+      CodebookNode *ptr = codebookHead;
 
-      //AND STOP HERE
+      while (1) {
+        num_bytes = read(codebookFD, &currChar, 1);
+        if (isDelim(currChar) || num_bytes == 0) {
+          char *tempCurrToken = malloc((currTokenSize) * sizeof(char));
+          strncpy(tempCurrToken, currToken, currTokenSize + 1);
+          
+          if (key == 1) {
+            ptr -> key = tempCurrToken;
+            key = 0;
+          } else {
+            ptr -> value = tempCurrToken;
+            key = 1;
+            
+            if (num_bytes != 0) {
+              CodebookNode *temp = malloc(sizeof(CodebookNode));
+              ptr -> next = temp;
+              ptr = temp;
+            }
+          }
 
+          if (num_bytes == 0) {
+            break;
+          } else {
+            memset(currToken, 0, strlen(currToken));
+            currTokenSize = 0;
+          }
+        } else {
+          if (!isDelim(currChar)) {
+            currToken[currTokenSize] = currChar;
+            currTokenSize++;
+          }
+        }
+      }
+      
+      CodebookNode *ptr2 = codebookHead;
+      while (ptr2 -> next != NULL) {
+        printf("KEY: %s\n", ptr2 -> key);
+        printf("VALUE: %s\n\n", ptr2 -> value);
+        ptr2 = ptr2 -> next;
+      }
+      
       if (strcmp(argv[2], "-R") == 0)
       {
         char *path = argv[4];

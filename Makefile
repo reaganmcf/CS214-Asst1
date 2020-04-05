@@ -19,7 +19,7 @@ test_buildcodebook_recursive: clean compile
 	./fileCompressor -R -b testFolder/
 
 test_compress: clean compile test_buildcodebook
-	./fileCompressor -c ./testFolder/rTest1.hcz ./testFolder/rTest1
+	./fileCompressor -c ./testFolder/rTest1 ./HuffmanCodebook
 
 run: compile
 	./fileCompressor -R -b testFolder/
