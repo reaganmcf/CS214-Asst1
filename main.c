@@ -8,6 +8,7 @@
 #include <sys/stat.h>
 
 #include "main.h"
+
 //import custom libs and supporting files
 #include "libs/bintree/bintree.h"
 #include "libs/minheap/minheap.h"
@@ -88,9 +89,9 @@ int main(int argc, char **argv)
     if (strcmp(argv[1], "-b") == 0 || strcmp(argv[2], "-b") == 0)
     {
 
-        printf("\033[0;32m");
-        printf("[ Starting to Build HuffmanCodebook ]\n");
-        printf("\033[0m");
+        //printf("\033[0;32m");
+        //printf("[ Starting to Build HuffmanCodebook ]\n");
+        //printf("\033[0m");
 
         if (minHeap->size == 1 && strlen(minHeap->elements[0]->data) > 0)
         {
@@ -132,48 +133,48 @@ int main(int argc, char **argv)
             // printf("temp2 = {'%s', %d, isStoringChar = %d}\n", temp2->data, temp2->freq, temp2->isStoringChar);
             if (temp1->isStoringChar == 1 && temp2->isStoringChar == 1)
             {
-                //They are both holding characters, so we need to build a subtree that contains these elements
+                // They are both holding characters, so we need to build a subtree that contains these elements
                 BinTreeNode *left = createBinTreeNode(temp1->data, temp1->freq, NULL, NULL);
                 BinTreeNode *right = createBinTreeNode(temp2->data, temp2->freq, NULL, NULL);
                 BinTreeNode *parent = createBinTreeNode(treeStringHolder, temp1->freq + temp2->freq, left, right);
                 HeapNode *newHeapNode = createHeapNode_TreeNode(parent, parent->data, calcFrequencyOfEntireTree(parent));
 
                 // printf("new heap node contains {'%s', %d} and {'%s', %d} -> {'%s', total freq = %d\n", temp1->data, temp1->freq, temp2->data, temp2->freq, newHeapNode->data, newHeapNode->freq);
-                //Add heapnode back to heap
+                // Add heapnode back to heap
                 minHeap_insert(minHeap, newHeapNode);
                 treeCount++;
             }
             else if (temp1->isStoringChar == 1)
             {
-                //temp1 is char, temp2 is tree
+                // temp1 is char, temp2 is tree
                 BinTreeNode *left = createBinTreeNode(temp1->data, temp1->freq, NULL, NULL);
                 BinTreeNode *parent = createBinTreeNode(treeStringHolder, temp1->freq + temp2->freq, left, temp2->treeNode);
                 HeapNode *newHeapNode = createHeapNode_TreeNode(parent, parent->data, calcFrequencyOfEntireTree(parent));
 
                 // printf("new heap node contains {'%s', %d} and {'%s', %d} -> {'%s', total freq = %d\n", temp1->data, temp1->freq, temp2->data, temp2->freq, newHeapNode->data, newHeapNode->freq);
-                //Add heapnode back to heap
+                // Add heapnode back to heap
                 minHeap_insert(minHeap, newHeapNode);
                 treeCount++;
             }
             else if (temp2->isStoringChar == 1)
             {
-                //temp1 is tree, temp2 is char
+                // temp1 is tree, temp2 is char
                 BinTreeNode *right = createBinTreeNode(temp2->data, temp2->freq, NULL, NULL);
                 BinTreeNode *parent = createBinTreeNode(treeStringHolder, temp1->freq + temp2->freq, temp1->treeNode, right);
                 HeapNode *newHeapNode = createHeapNode_TreeNode(parent, parent->data, calcFrequencyOfEntireTree(parent));
 
                 // printf("new heap node contains {'%s', %d} and {'%s', %d} -> {'%s', total freq = %d\n", temp1->data, temp1->freq, temp2->data, temp2->freq, newHeapNode->data, newHeapNode->freq);
-                //Add heapnode back to heap
+                // Add heapnode back to heap
                 minHeap_insert(minHeap, newHeapNode);
                 treeCount++;
             }
             else
             {
-                //temp1 is tree. temp2 is tree
+                // temp1 is tree. temp2 is tree
                 BinTreeNode *parent = createBinTreeNode(treeStringHolder, temp1->freq + temp2->freq, temp1->treeNode, temp2->treeNode);
                 HeapNode *newHeapNode = createHeapNode_TreeNode(parent, parent->data, calcFrequencyOfEntireTree(parent));
                 // printf("new heap node contains {'%s', %d} and {'%s', %d} -> {'%s', total freq = %d\n", temp1->data, temp1->freq, temp2->data, temp2->freq, newHeapNode->data, newHeapNode->freq);
-                //Add heapnode back to heap
+                // Add heapnode back to heap
                 minHeap_insert(minHeap, newHeapNode);
                 treeCount++;
             }
@@ -184,9 +185,7 @@ int main(int argc, char **argv)
             // printf("-----\n");
         }
 
-        /**
-        * The minheap has now been created here, so we need to traverse the tree and write out our Huffman Coding book
-          */
+        // The minheap has now been created here, so we need to traverse the tree and write out our Huffman Coding book
 
         BinTreeNode *root = minHeap->elements[0]->treeNode;
         int *arr = malloc(sizeof(int) * 100);
@@ -198,15 +197,15 @@ int main(int argc, char **argv)
         int huffmanCodingBookFD = open("HuffmanCodebook", O_WRONLY | O_CREAT | O_APPEND, S_IRUSR | S_IWUSR);
         writeCodes(root, arr, 0, huffmanCodingBookFD);
 
-        printf("\033[0;32m");
-        printf("[ Successfully created HuffmanCodebook ]\n");
-        printf("\033[0m");
+        // printf("\033[0;32m");
+        // printf("[ Successfully created HuffmanCodebook ]\n");
+        // printf("\033[0m");
     }
     else if (strcmp(argv[1], "-d") == 0 || strcmp(argv[2], "-d") == 0)
     {
-        printf("\033[0;32m");
-        printf("[ Starting Decompress ]\n");
-        printf("\033[0m");
+        // printf("\033[0;32m");
+        // printf("[ Starting Decompress ]\n");
+        // printf("\033[0m");
         //decompress
 
         if (argc >= 4)
@@ -324,9 +323,9 @@ int main(int argc, char **argv)
                 decompressFile(path, codebookHead);
             }
 
-            printf("\033[0;32m");
-            printf("[ Successfully Finished Decompression ]\n");
-            printf("\033[0m");
+            // printf("\033[0;32m");
+            // printf("[ Successfully Finished Decompression ]\n");
+            // printf("\033[0m");
         }
         else
         {
@@ -338,9 +337,9 @@ int main(int argc, char **argv)
     }
     else if (strcmp(argv[1], "-c") == 0 || strcmp(argv[2], "-c") == 0)
     {
-        printf("\033[0;32m");
-        printf("[ Starting Compression ]\n");
-        printf("\033[0m");
+        // printf("\033[0;32m");
+        // printf("[ Starting Compression ]\n");
+        // printf("\033[0m");
         //compress
 
         if (argc >= 3)
@@ -372,7 +371,7 @@ int main(int argc, char **argv)
             {
                 num_bytes = read(codebookFD, &currChar, 1);
 
-                //this means the file is empty
+                // this means the file is empty
                 if (num_bytes == 0 && started == 0)
                 {
                     printf("\033[0;31m");
@@ -381,7 +380,7 @@ int main(int argc, char **argv)
                     exit(1);
                 }
 
-                //init conidition override now that we know the file exists and is not empty
+                // init conidition override now that we know the file exists and is not empty
                 started = 1;
 
                 if (isDelim(currChar) || num_bytes == 0)
@@ -427,14 +426,6 @@ int main(int argc, char **argv)
                 }
             }
 
-            // CodebookNode *ptr2 = codebookHead;
-            // while (ptr2->next != NULL)
-            // {
-            //     printf("KEY: %s\n", ptr2->key);
-            //     printf("VALUE: %s\n\n", ptr2->value);
-            //     ptr2 = ptr2->next;
-            // }
-
             if (strlen(codebookHead->key) == 0)
             {
                 printf("\033[0;31m");
@@ -453,9 +444,9 @@ int main(int argc, char **argv)
                 compressFile(path, codebookHead);
             }
 
-            printf("\033[0;32m");
-            printf("[ Successfully Finished Compression ]\n");
-            printf("\033[0m");
+            // printf("\033[0;32m");
+            // printf("[ Successfully Finished Compression ]\n");
+            // printf("\033[0m");
 
             free(currToken);
         }
@@ -545,7 +536,7 @@ void decompressFile(char *path, CodebookNode *head)
         exit(1);
     }
 
-    printf("decompressing %s\n", path);
+    // printf("decompressing %s\n", path);
 
     char *newPath = path;
     newPath[strlen(path) - 4] = '\0';
@@ -685,7 +676,7 @@ void compressFile(char *path, CodebookNode *head)
     }
 
     char *newPath = path;
-    printf("Compressing %s\n", path);
+    // printf("Compressing %s\n", path);
     sprintf(newPath, "%s.hcz", path);
     if (access(newPath, F_OK) != -1)
     {
