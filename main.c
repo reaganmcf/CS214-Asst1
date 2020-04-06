@@ -85,6 +85,17 @@ int main(int argc, char **argv)
         printf("[ Starting to Build HuffmanCodebook ]\n");
         printf("\033[0m");
 
+        if (minHeap->size == 1 && strlen(minHeap->elements[0]->data) > 0)
+        {
+            //this means the file only contains one sequence, so we have to format it as BinTreeNode
+            temp1 = minHeap_delete(minHeap);
+            BinTreeNode *left = createBinTreeNode(temp1->data, temp1->freq, NULL, NULL);
+            BinTreeNode *parent = createBinTreeNode("tree0", temp1->freq, left, NULL);
+            HeapNode *newHeapNode = createHeapNode_TreeNode(parent, parent->data, calcFrequencyOfEntireTree(parent));
+
+            minHeap_insert(minHeap, newHeapNode);
+        }
+
         int treeCount = 0;
         int c = 1000;
         while (minHeap->size > 1 && c > 0)
@@ -275,7 +286,7 @@ int main(int argc, char **argv)
 
             if (strcmp(argv[1], "-R") == 0)
             {
-                recursivelyDecompress(argv[3], codebookHead);
+                recursivelyDecompress(path, codebookHead);
             }
             else
             {
@@ -401,7 +412,6 @@ int main(int argc, char **argv)
             else
             {
                 //Non recursive compress
-                printf("non recursive\n");
                 compressFile(path, codebookHead);
             }
 
@@ -428,6 +438,14 @@ void recursivelyDecompress(char *path, CodebookNode *head)
     DIR *directory;
     struct dirent *entry;
 
+    if (access(path, F_OK) == -1)
+    {
+        printf("\033[0;31m");
+        printf("[ ERROR ] Provided path to directory deosn't exist, please make sure to give a valid path\n");
+        printf("\033[0m");
+        exit(1);
+    }
+
     if ((directory = opendir(path)) != NULL)
     {
         while ((entry = readdir(directory)) != NULL)
@@ -453,6 +471,11 @@ void recursivelyDecompress(char *path, CodebookNode *head)
 
 void decompressFile(char *path, CodebookNode *head)
 {
+    int len = strlen(path);
+    if (path[len - 1] != 'z' && path[len - 2] != 'c' && path[len - 3] != 'h' && path[len - 4] != '.')
+        return;
+
+    printf("decompressing %s\n", path);
     int fd = open(path, O_RDONLY);
 
     if (fd == -1)
@@ -464,7 +487,7 @@ void decompressFile(char *path, CodebookNode *head)
     }
 
     char *newPath = path;
-    newPath[strlen(path) - 1] = '\0';
+    newPath[strlen(path) - 4] = '\0';
     if (access(newPath, F_OK) != -1)
     {
         remove(newPath);
@@ -484,35 +507,53 @@ void decompressFile(char *path, CodebookNode *head)
     while (1)
     {
         num_bytes = read(fd, &currChar, 1);
+        currToken[currTokenSize] = currChar;
+        currTokenSize++;
         // printf("read: %c\n", currChar);
 
-        if (num_bytes == 0 && currToken == 0 && started == 0)
+        if (num_bytes == 0 && strlen(currToken) == 0 && started == 0)
         {
-            printf("\033[0;31m");
-            printf("[ ERROR ] Contents of file are empty, nothing to compress \n");
-            printf("\033[0m");
-            exit(1);
+            // printf("\033[0;31m");
+            // printf("[ ERROR ] Contents of file are empty, nothing to compress \n");
+            // printf("\033[0m");
+            return;
         }
 
         started = 1;
 
+        // printf("currToken = %s\n", currToken);
         is_key = 0;
         CodebookNode *curr = head;
-        while (curr != NULL)
+        char *tempValue;
+        while (curr != NULL && is_key == 0)
         {
             if (strcmp(curr->key, currToken) == 0 && strlen(currToken) > 0)
             {
                 is_key = 1;
+                tempValue = curr->value;
             }
             curr = curr->next;
         }
 
-        if (is_key)
+        if (is_key == 1 || (started == 1 && num_bytes == 0))
         {
-            printf("\tis_key!\n");
+            // printf("\tis_key!\n");
 
-            char *tempCurrToken = malloc((currTokenSize) * sizeof(char));
-            strncpy(tempCurrToken, currToken, currTokenSize + 1);
+            // printf("temp is %s\n", tempValue);
+            if (strcmp(tempValue, "<\\s>") == 0)
+            {
+                tempValue = " ";
+            }
+            else if (strcmp(tempValue, "<\\t>") == 0)
+            {
+                tempValue = "\t";
+            }
+            else if (strcmp(tempValue, "<\\n>") == 0)
+            {
+                tempValue = "\n";
+            }
+
+            write(decompressedFileFD, tempValue, strlen(tempValue));
 
             if (num_bytes == 0)
             {
@@ -522,14 +563,6 @@ void decompressFile(char *path, CodebookNode *head)
             {
                 memset(currToken, 0, strlen(currToken));
                 currTokenSize = 0;
-            }
-        }
-        else
-        {
-            if (!isDelim(currChar))
-            {
-                currToken[currTokenSize] = currChar;
-                currTokenSize++;
             }
         }
     }
@@ -654,7 +687,7 @@ void compressFile(char *path, CodebookNode *head)
                     printf("replacement is NULL!\n");
                     exit(1);
                 }
-                // printf("replacing '%s' with '%s'\n", tempString, replacement);
+                printf("replacing '%s' with '%s'\n", tempString, replacement);
                 write(compressedFileFD, replacement, strlen(replacement));
             }
             else
@@ -699,7 +732,7 @@ void compressFile(char *path, CodebookNode *head)
                     exit(1);
                 }
 
-                // printf("replacing '%s%s' with '%s%s'\n", tempCurrToken, tempString, tokenReplacement, strReplacement);
+                printf("replacing '%s%s' with '%s%s'\n", tempCurrToken, tempString, tokenReplacement, strReplacement);
                 write(compressedFileFD, tokenReplacement, strlen(tokenReplacement));
                 write(compressedFileFD, strReplacement, strlen(strReplacement));
             }
