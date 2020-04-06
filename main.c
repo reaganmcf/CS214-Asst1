@@ -34,18 +34,25 @@ int main(int argc, char **argv)
         exit(1);
     }
 
-    if (argv[2][0] == '-' && (flag2 != 'b' && flag2 != 'c' && flag2 != 'd' && flag2 != 'R'))
+    if (argv[2][0] == '-' && (flag2 != 'b' && flag2 != 'c' && flag2 != 'd' && flag2 != 'R') && strlen(argv[2]) != 2)
     {
         printf("\033[0;31m");
         printf("[ ERROR ] Please make sure to pass in one of following flags: [ -b, -c, -d, and -R for recursive ]\n");
         printf("\033[0m");
-        exit(2);
+        exit(1);
     }
 
     int is_building = 0;
     MinHeap *minHeap = createMinHeap();
     if (flag1 != 'R' && flag1 == 'b')
     {
+        if (strlen(argv[2]) != 2 && argv[2][0] == '-')
+        {
+            printf("\033[0;31m");
+            printf("[ ERROR ] Make sure your flag order is correct.\n");
+            printf("\033[0m");
+            exit(1);
+        }
         is_building = 1;
         minHeap = insertIntoHeap(argv[2], minHeap);
         // printMinHeap(minHeap);
@@ -95,6 +102,13 @@ int main(int argc, char **argv)
 
             minHeap_insert(minHeap, newHeapNode);
         }
+        else if (minHeap->size == 1 && strlen(minHeap->elements[0]->data) == 0)
+        {
+            printf("\033[0;31m");
+            printf("[ ERROR ] Make sure the file you have passed exists and is not empty.\n");
+            printf("\033[0m");
+            exit(1);
+        }
 
         int treeCount = 0;
         int c = 1000;
@@ -106,8 +120,12 @@ int main(int argc, char **argv)
             sprintf(treeStringHolder, "tree%d", treeCount);
 
             minHeap_heapsort(minHeap, 0);
+            // printMinHeap(minHeap);
+            // printMinHeap(minHeap);
             temp1 = minHeap_delete(minHeap);
+            // printMinHeap(minHeap);
             minHeap_heapsort(minHeap, 0);
+            // printMinHeap(minHeap);
             temp2 = minHeap_delete(minHeap);
 
             // printf("temp1 = {'%s', %d, isStoringChar = %d}\n", temp1->data, temp1->freq, temp1->isStoringChar);
@@ -177,9 +195,8 @@ int main(int argc, char **argv)
         {
             remove("./HuffmanCodebook");
         }
-
         int huffmanCodingBookFD = open("HuffmanCodebook", O_WRONLY | O_CREAT | O_APPEND, S_IRUSR | S_IWUSR);
-        printCodes(root, arr, 0, huffmanCodingBookFD);
+        writeCodes(root, arr, 0, huffmanCodingBookFD);
 
         printf("\033[0;32m");
         printf("[ Successfully created HuffmanCodebook ]\n");
@@ -192,7 +209,7 @@ int main(int argc, char **argv)
         printf("\033[0m");
         //decompress
 
-        if (argc >= 3)
+        if (argc >= 4)
         {
             //we need to read in the codebook and create a linked list of all of the key -> value pairs
             char *path = (argc == 4) ? argv[2] : argv[3];
@@ -276,13 +293,19 @@ int main(int argc, char **argv)
                 }
             }
 
-            // CodebookNode *ptr2 = codebookHead;
-            // while (ptr2->next != NULL)
-            // {
-            //     printf("KEY: %s\n", ptr2->key);
-            //     printf("VALUE: %s\n\n", ptr2->value);
-            //     ptr2 = ptr2->next;
-            // }
+            if (strlen(codebookHead->key) == 0)
+            {
+                printf("\033[0;31m");
+                printf("[ ERROR ] Codebook is corrupted. To create a Codebook, use the -b flag \n");
+                printf("\033[0m");
+                exit(1);
+            }
+
+            CodebookNode *ptr2 = codebookHead;
+            while (ptr2->next != NULL)
+            {
+                ptr2 = ptr2->next;
+            }
 
             if (strcmp(argv[1], "-R") == 0)
             {
@@ -290,7 +313,14 @@ int main(int argc, char **argv)
             }
             else
             {
-                //Non recursive compress
+                //Non recursive decompress
+                if (access(path, F_OK) == -1)
+                {
+                    printf("\033[0;31m");
+                    printf("[ ERROR ] No access to the specified file '%s'\n", path);
+                    printf("\033[0m");
+                    exit(1);
+                }
                 decompressFile(path, codebookHead);
             }
 
@@ -301,9 +331,9 @@ int main(int argc, char **argv)
         else
         {
             printf("\033[0;31m");
-            printf("[ ERROR ] Improper inputs configuration for Compress. Please enter your command in the format of ./fileCompressor -c <path_to_file_to_compress> <path_to_codebook>");
+            printf("[ ERROR ] Improper inputs configuration for Decompress. Please enter your command in the format of ./fileCompressor -d <path_to_file_to_compress> <path_to_codebook>\n");
             printf("\033[0m");
-            return 1;
+            exit(1);
         }
     }
     else if (strcmp(argv[1], "-c") == 0 || strcmp(argv[2], "-c") == 0)
@@ -405,6 +435,14 @@ int main(int argc, char **argv)
             //     ptr2 = ptr2->next;
             // }
 
+            if (strlen(codebookHead->key) == 0)
+            {
+                printf("\033[0;31m");
+                printf("[ ERROR ] Codebook is corrupted. To create a Codebook, use the -b flag \n");
+                printf("\033[0m");
+                exit(1);
+            }
+
             if (strcmp(argv[1], "-R") == 0)
             {
                 recursivelyCompress(argv[3], codebookHead);
@@ -418,6 +456,8 @@ int main(int argc, char **argv)
             printf("\033[0;32m");
             printf("[ Successfully Finished Compression ]\n");
             printf("\033[0m");
+
+            free(currToken);
         }
         else
         {
@@ -427,8 +467,28 @@ int main(int argc, char **argv)
             return 1;
         }
     }
+    else
+    {
+        printf("\033[0;31m");
+        printf("[ ERROR ] Please enter atleast one of the following flags < -b, -c, -d >\n");
+        printf("\033[0m");
+    }
+
+    //loop over minheap and free
+    // freeBinTree(minHeap->elements[0]->treeNode);
+    // free(minHeap);
 
     return 0;
+}
+
+void freeBinTree(BinTreeNode *node)
+{
+    if (node != NULL)
+    {
+        freeBinTree(node->left);
+        freeBinTree(node->right);
+        free(node);
+    }
 }
 
 void recursivelyDecompress(char *path, CodebookNode *head)
@@ -475,7 +535,6 @@ void decompressFile(char *path, CodebookNode *head)
     if (path[len - 1] != 'z' && path[len - 2] != 'c' && path[len - 3] != 'h' && path[len - 4] != '.')
         return;
 
-    printf("decompressing %s\n", path);
     int fd = open(path, O_RDONLY);
 
     if (fd == -1)
@@ -485,6 +544,8 @@ void decompressFile(char *path, CodebookNode *head)
         printf("\033[0m");
         exit(1);
     }
+
+    printf("decompressing %s\n", path);
 
     char *newPath = path;
     newPath[strlen(path) - 4] = '\0';
@@ -624,6 +685,7 @@ void compressFile(char *path, CodebookNode *head)
     }
 
     char *newPath = path;
+    printf("Compressing %s\n", path);
     sprintf(newPath, "%s.hcz", path);
     if (access(newPath, F_OK) != -1)
     {
@@ -684,10 +746,12 @@ void compressFile(char *path, CodebookNode *head)
                 char *replacement = codebook_getKeyByValue(tempString, head);
                 if (replacement == NULL)
                 {
-                    printf("replacement is NULL!\n");
+                    printf("\033[0;31m");
+                    printf("[ ERROR ] Codebook is corrupted, please rebiild it \n");
+                    printf("\033[0m");
                     exit(1);
                 }
-                printf("replacing '%s' with '%s'\n", tempString, replacement);
+                // printf("replacing '%s' with '%s'\n", tempString, replacement);
                 write(compressedFileFD, replacement, strlen(replacement));
             }
             else
@@ -723,16 +787,20 @@ void compressFile(char *path, CodebookNode *head)
                 char *strReplacement = codebook_getKeyByValue(tempString, head);
                 if (tokenReplacement == NULL)
                 {
-                    printf("tokenReplacement is NULL!\n");
+                    printf("\033[0;31m");
+                    printf("[ ERROR ] Codebook is corrupted, please rebiild it \n");
+                    printf("\033[0m");
                     exit(1);
                 }
                 if (strReplacement == NULL)
                 {
-                    printf("strReplacement is NULL!\n");
+                    printf("\033[0;31m");
+                    printf("[ ERROR ] Codebook is corrupted, please rebiild it \n");
+                    printf("\033[0m");
                     exit(1);
                 }
 
-                printf("replacing '%s%s' with '%s%s'\n", tempCurrToken, tempString, tokenReplacement, strReplacement);
+                // printf("replacing '%s%s' with '%s%s'\n", tempCurrToken, tempString, tokenReplacement, strReplacement);
                 write(compressedFileFD, tokenReplacement, strlen(tokenReplacement));
                 write(compressedFileFD, strReplacement, strlen(strReplacement));
             }
@@ -782,7 +850,7 @@ char *codebook_getKeyByValue(char *value, CodebookNode *head)
     return NULL;
 }
 
-void *printCodes(BinTreeNode *root, int arr[], int top, int fd)
+void *writeCodes(BinTreeNode *root, int arr[], int top, int fd)
 
 {
     // Assign 0 to left edge and recur
@@ -790,7 +858,7 @@ void *printCodes(BinTreeNode *root, int arr[], int top, int fd)
     {
 
         arr[top] = 0;
-        printCodes(root->left, arr, top + 1, fd);
+        writeCodes(root->left, arr, top + 1, fd);
     }
 
     // Assign 1 to right edge and recur
@@ -798,7 +866,7 @@ void *printCodes(BinTreeNode *root, int arr[], int top, int fd)
     {
 
         arr[top] = 1;
-        printCodes(root->right, arr, top + 1, fd);
+        writeCodes(root->right, arr, top + 1, fd);
     }
 
     if (root->left == NULL && root->right == NULL)
@@ -908,6 +976,8 @@ MinHeap *insertIntoHeap(char *file, MinHeap *minHeap)
                     tempString = "<\\n>";
                 }
 
+                // free(tempString);
+
                 HeapNode *temp2 = minHeap_search(minHeap, tempString);
                 if (temp2 == NULL)
                 {
@@ -945,6 +1015,8 @@ MinHeap *insertIntoHeap(char *file, MinHeap *minHeap)
                     memset(currToken, 0, strlen(currToken));
                     currTokenSize = 0;
                 }
+
+                // free(tempCurrToken);
 
                 // insert the delim into the minheap
                 char *tempString = malloc(4 * sizeof(char));
@@ -984,6 +1056,7 @@ MinHeap *insertIntoHeap(char *file, MinHeap *minHeap)
     }
 
     close(fd);
+    free(currToken);
 
     return minHeap;
 }

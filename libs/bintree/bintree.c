@@ -15,7 +15,6 @@ BinTreeNode *createBinTreeNode(char *data, int freq, BinTreeNode *left, BinTreeN
   t->left = left;
   t->right = right;
   t->encoded = 0;
-  t->encoding = malloc(sizeof(char) * 100);
 
   t->freq += calcFrequencyOfChildren(left);
   t->freq += calcFrequencyOfChildren(right);

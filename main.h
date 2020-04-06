@@ -13,7 +13,8 @@ typedef struct CodebookNode
 
 MinHeap *recursiveTokenization(char *path, MinHeap *minHeap);
 MinHeap *insertIntoHeap(char *file, MinHeap *minHeap);
-void *printCodes(BinTreeNode *root, int arr[], int top, int fd);
+void *writeCodes(BinTreeNode *root, int arr[], int top, int fd);
+void freeBinTree(BinTreeNode *node);
 int isDelim(char curr);
 int isRegFile(const char *path);
 void recursivelyCompress(char *path, CodebookNode *head);

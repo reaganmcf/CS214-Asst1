@@ -1,0 +1,11 @@
+We tested our code on the following situations
+
+junk flag ordering
+junk flags
+improper paths
+junk codebooks
+improper path ordering
+too many flags
+too many parameters
+junk paths
+junk dirs
