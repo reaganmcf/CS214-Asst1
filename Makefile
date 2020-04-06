@@ -12,14 +12,23 @@ compile: minheap bintree
 clean:
 	rm -rf fileCompressor; rm -rf *.hcz; rm libs/minheap/minheap.o; rm libs/bintree/bintree.o
 
-test_buildcodebook: clean compile
-	./fileCompressor -b testFolder/rTest1
+test_buildcodebook: compile
+	./fileCompressor -b aaaa_testfolder/rTest1
 
-test_buildcodebook_recursive: clean compile 
-	./fileCompressor -R -b testFolder/
+test_buildcodebook_recursive: compile 
+	./fileCompressor -R -b aaaa_testfolder/
 
-test_compress: clean compile test_buildcodebook
-	./fileCompressor -c ./testFolder/rTest1 ./HuffmanCodebook
+test_compress: compile test_buildcodebook
+	./fileCompressor -c aaaa_testfolder/rTest1 ./HuffmanCodebook
+
+test_compress_recursive: compile test_buildcodebook_recursive 
+	./fileCompressor -R -c aaaa_testfolder/ ./HuffmanCodebook
+
+test_decompress: compile
+	./fileCompressor -d ./testFolder/rTest1.hcz ./HuffmanCodebook
+
+test_decompress_recursive: compile
+	./fileCompressor -R -d ./testFolder ./HuffmanCodebook
 
 run: compile
 	./fileCompressor -R -b testFolder/

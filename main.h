@@ -16,6 +16,11 @@ MinHeap *insertIntoHeap(char *file, MinHeap *minHeap);
 void *printCodes(BinTreeNode *root, int arr[], int top, int fd);
 int isDelim(char curr);
 int isRegFile(const char *path);
+void recursivelyCompress(char *path, CodebookNode *head);
 void compressFile(char *path, CodebookNode *head);
+void recursivelyDecompress(char* path, CodebookNode* head);
+void decompressFile(char* path, CodebookNode* head); 
+char *codebook_getValueByKey(char *key, CodebookNode *head);
+char *codebook_getKeyByValue(char *value, CodebookNode *head);
 
 #endif
