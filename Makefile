@@ -25,7 +25,7 @@ test_compress_recursive: compile test_buildcodebook_recursive
 	./fileCompressor -R -c aaaa_testfolder/ ./HuffmanCodebook
 
 test_decompress: compile
-	./fileCompressor -d ./testFolder/rTest1.hcz ./HuffmanCodebook
+	./fileCompressor -d aaaa_testfolder/rTest1.hcz ./HuffmanCodebook
 
 test_decompress_recursive: compile
 	./fileCompressor -R -d ./testFolder ./HuffmanCodebook

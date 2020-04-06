@@ -42,19 +42,22 @@ int main(int argc, char **argv)
         exit(2);
     }
 
+    int is_building = 0;
     MinHeap *minHeap = createMinHeap();
-    if (flag1 != 'R')
+    if (flag1 != 'R' && flag1 == 'b')
     {
+        is_building = 1;
         minHeap = insertIntoHeap(argv[2], minHeap);
         // printMinHeap(minHeap);
     }
-    else
+    else if (flag2 == 'b')
     {
+        is_building = 1;
         minHeap = recursiveTokenization(argv[3], minHeap);
         // printMinHeap(minHeap);
     }
 
-    if (minHeap == NULL || minHeap->size == 0)
+    if (is_building == 1 && (minHeap == NULL || minHeap->size == 0))
     {
         printf("\033[0;31m");
         printf("[ ERROR ] Make sure the file you have passed exists and is not empty.\n");
@@ -173,8 +176,124 @@ int main(int argc, char **argv)
     }
     else if (strcmp(argv[1], "-d") == 0 || strcmp(argv[2], "-d") == 0)
     {
-        printf("need to decompress\n");
+        printf("\033[0;32m");
+        printf("[ Starting Decompress ]\n");
+        printf("\033[0m");
         //decompress
+
+        if (argc >= 3)
+        {
+            //we need to read in the codebook and create a linked list of all of the key -> value pairs
+            char *path = (argc == 4) ? argv[2] : argv[3];
+            int codebookFD = open(argc == 4 ? argv[3] : argv[4], O_RDONLY);
+            if (codebookFD == -1)
+            {
+                printf("\033[0;31m");
+                printf("[ ERROR ] Codebook does not exist at the path provided. To create a Codebook, use the -b flag \n");
+                printf("\033[0m");
+                exit(1);
+            }
+
+            CodebookNode *codebookHead = malloc(sizeof(CodebookNode));
+            char currChar;
+            int num_bytes = 0;
+
+            char *currToken = calloc(1000, sizeof(char));
+            int currTokenSize = 0;
+
+            int key = 1;
+            CodebookNode *ptr = codebookHead;
+
+            int started = 0;
+
+            while (1)
+            {
+                num_bytes = read(codebookFD, &currChar, 1);
+
+                //this means the file is empty
+                if (num_bytes == 0 && started == 0)
+                {
+                    printf("\033[0;31m");
+                    printf("[ ERROR ] Codebook does not exist or is empty. To create a Codebook, use the -b flag \n");
+                    printf("\033[0m");
+                    exit(1);
+                }
+
+                //init conidition override now that we know the file exists and is not empty
+                started = 1;
+
+                if (isDelim(currChar) || num_bytes == 0)
+                {
+                    char *tempCurrToken = calloc((currTokenSize), sizeof(char));
+                    strncpy(tempCurrToken, currToken, currTokenSize + 1);
+
+                    if (key == 1)
+                    {
+                        ptr->key = tempCurrToken;
+                        key = 0;
+                    }
+                    else
+                    {
+                        ptr->value = tempCurrToken;
+                        key = 1;
+
+                        if (num_bytes != 0)
+                        {
+                            CodebookNode *temp = malloc(sizeof(CodebookNode));
+                            ptr->next = temp;
+                            ptr = temp;
+                        }
+                    }
+
+                    if (num_bytes == 0)
+                    {
+                        break;
+                    }
+                    else
+                    {
+                        memset(currToken, 0, strlen(currToken));
+                        currTokenSize = 0;
+                    }
+                }
+                else
+                {
+                    if (!isDelim(currChar))
+                    {
+                        currToken[currTokenSize] = currChar;
+                        currTokenSize++;
+                    }
+                }
+            }
+
+            // CodebookNode *ptr2 = codebookHead;
+            // while (ptr2->next != NULL)
+            // {
+            //     printf("KEY: %s\n", ptr2->key);
+            //     printf("VALUE: %s\n\n", ptr2->value);
+            //     ptr2 = ptr2->next;
+            // }
+
+            if (strcmp(argv[1], "-R") == 0)
+            {
+                recursivelyDecompress(argv[3], codebookHead);
+            }
+            else
+            {
+                //Non recursive compress
+                decompressFile(path, codebookHead);
+            }
+
+            printf("\033[0;32m");
+            printf("[ Successfully Finished Decompression ]\n");
+            printf("\033[0m");
+        }
+        else
+        {
+            printf("\033[0;31m");
+            printf("[ ERROR ] Improper inputs configuration for Compress. Please enter your command in the format of ./fileCompressor -c <path_to_file_to_compress> <path_to_codebook>");
+            printf("\033[0m");
+            return 1;
+        }
     }
     else if (strcmp(argv[1], "-c") == 0 || strcmp(argv[2], "-c") == 0)
     {
@@ -300,6 +419,125 @@ int main(int argc, char **argv)
     }
 
     return 0;
+}
+
+void recursivelyDecompress(char *path, CodebookNode *head)
+{
+    char nextPath[2000];
+    //we need to recursively compress
+    DIR *directory;
+    struct dirent *entry;
+
+    if ((directory = opendir(path)) != NULL)
+    {
+        while ((entry = readdir(directory)) != NULL)
+        {
+            if ((strcmp(entry->d_name, ".") != 0) && (strcmp(entry->d_name, "..") != 0))
+            {
+                strcpy(nextPath, path);
+                strcat(nextPath, "/");
+                strcat(nextPath, entry->d_name);
+
+                if (isRegFile(nextPath))
+                {
+                    decompressFile(nextPath, head);
+                }
+
+                recursivelyDecompress(nextPath, head);
+            }
+        }
+
+        closedir(directory);
+    }
+}
+
+void decompressFile(char *path, CodebookNode *head)
+{
+    int fd = open(path, O_RDONLY);
+
+    if (fd == -1)
+    {
+        printf("\033[0;31m");
+        printf("[ ERROR ] Provided path for compression does not exist \n");
+        printf("\033[0m");
+        exit(1);
+    }
+
+    char *newPath = path;
+    newPath[strlen(path) - 1] = '\0';
+    if (access(newPath, F_OK) != -1)
+    {
+        remove(newPath);
+    }
+
+    int decompressedFileFD = open(newPath, O_WRONLY | O_APPEND | O_CREAT, S_IRUSR | S_IWUSR);
+
+    char currChar;
+    int num_bytes = 0;
+
+    int started = 0;
+    int is_key = 0;
+
+    char *currToken = calloc(1000, sizeof(char));
+    int currTokenSize = 0;
+
+    while (1)
+    {
+        num_bytes = read(fd, &currChar, 1);
+        // printf("read: %c\n", currChar);
+
+        if (num_bytes == 0 && currToken == 0 && started == 0)
+        {
+            printf("\033[0;31m");
+            printf("[ ERROR ] Contents of file are empty, nothing to compress \n");
+            printf("\033[0m");
+            exit(1);
+        }
+
+        started = 1;
+
+        is_key = 0;
+        CodebookNode *curr = head;
+        while (curr != NULL)
+        {
+            if (strcmp(curr->key, currToken) == 0 && strlen(currToken) > 0)
+            {
+                is_key = 1;
+            }
+            curr = curr->next;
+        }
+
+        if (is_key)
+        {
+            printf("\tis_key!\n");
+
+            char *tempCurrToken = malloc((currTokenSize) * sizeof(char));
+            strncpy(tempCurrToken, currToken, currTokenSize + 1);
+
+            if (num_bytes == 0)
+            {
+                break;
+            }
+            else
+            {
+                memset(currToken, 0, strlen(currToken));
+                currTokenSize = 0;
+            }
+        }
+        else
+        {
+            if (!isDelim(currChar))
+            {
+                currToken[currTokenSize] = currChar;
+                currTokenSize++;
+            }
+        }
+    }
+
+    close(fd);
+    close(decompressedFileFD);
+
+    return;
 }
 
 void recursivelyCompress(char *path, CodebookNode *head)
@@ -477,6 +715,7 @@ void compressFile(char *path, CodebookNode *head)
     }
 
     close(fd);
+    close(compressedFileFD);
 
     return;
 }
